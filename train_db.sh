@@ -1,0 +1,16 @@
+exp_name='triplane-compressed_wo_knn'
+
+voxel_size=0.005
+update_init_factor=16
+appearance_dim=0
+ratio=1
+tri_resolution=16
+feat_dim=50
+
+ulimit -n 4096
+
+./train.sh -d blending/playroom -l ${exp_name} --gpu -1 --voxel_size ${voxel_size} --update_init_factor ${update_init_factor} --appearance_dim ${appearance_dim} --ratio ${ratio} --tri_resolution ${tri_resolution} --feat_dim ${feat_dim}& 
+wait
+sleep 20s
+
+# ./train.sh -d blending/drjohnson -l ${exp_name} --gpu -1 --voxel_size ${voxel_size} --update_init_factor ${update_init_factor} --appearance_dim ${appearance_dim} --ratio ${ratio} --tri_resolution ${tri_resolution} --feat_dim ${feat_dim} & 

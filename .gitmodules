@@ -1,0 +1,9 @@
+[submodule "submodules/diff-gaussian-rasterization"]
+	path = submodules/diff-gaussian-rasterization
+	url = https://github.com/graphdeco-inria/diff-gaussian-rasterization
+[submodule "submodules/nvdiffrast"]
+	path = submodules/nvdiffrast
+	url = https://github.com/NVlabs/nvdiffrast
+[submodule "submodules/pytorch_wavelets"]
+	path = submodules/pytorch_wavelets
+	url = https://github.com/fbcotter/pytorch_wavelets
