@@ -1,4 +1,4 @@
-name: scaffold_gs
+name: TC_GS
 channels:
   - pytorch
   - pyg
