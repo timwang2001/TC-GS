@@ -55,184 +55,57 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
             feat = feat + torch.empty_like(feat).uniform_( -0.5, 0.5) * Q_feat
             grid_scaling = grid_scaling + torch.empty_like(grid_scaling).uniform_(-0.5, 0.5) * Q_scaling
             grid_offsets = grid_offsets + torch.empty_like(grid_offsets).uniform_(-0.5, 0.5) * Q_offsets
-        #     tri_feat = pc.triplane(anchor,pc.max_coords,pc.min_coords)#*0.1 + pc._anchor_feat[visible_mask].detach() * 0.9
-        # elif step > 7000 and step < 8000:
-        #     tri_feat = pc.triplane(anchor,pc.max_coords,pc.min_coords)#*0.5 + pc._anchor_feat[visible_mask].detach() * 0.5
         if step == 10000:
             pc.updatebbox()
-            
-
-            # tri_feat = pc.triplane(anchor,pc.max_coords,pc.min_coords)
         if step == 15000:
             pc.init_knn_indice(K)
         if step > 10000:
-            #knn_indices = torch.zeros_like(pc.knn_indicess)
-
-
-           
-
-            # if step >15000:
-            #     true_indices = torch.where(visible_mask)[0]
-            #     knn_indices = pc.knn_indices[visible_mask]
-            #     vismask = torch.isin(knn_indices.flatten(), true_indices).view(-1,K)#N*K
-            #     #print(vismask[0])
-            #     hmask = torch.sum(vismask, dim=1) > 4#N->m
-            #     #print(hmask[0])
-            #     knn_indices = knn_indices[hmask]#m,8
-            #     #print(knn_indices[0])
-            #     result = torch.zeros(knn_indices.size(0), 4, dtype=knn_indices.dtype, device=knn_indices.device)
-
-            #     for idx in range(knn_indices.shape[0]):
-            #         indx = knn_indices[idx]
-            #         filtered = indx[torch.isin(indx, true_indices)]
-            #         #print('shape',filtered.shape)
-            #         result[idx,] = filtered[:4]
-            #         #result[idx, :vismask[idx].sum().clamp(max=4)] = knn_indices[idx][vismask[idx]][:4]
-
-
-            #     #print(result[0])
-            #     #print(f'knnindice{knn_indices.shape} result{result.shape}')
-            #     knn_indices = result
-            #     #filtered_indice = [row[torch.isin(row, true_indices)] for row in knn_indices]
-            #     #assert knn_indices.shape[0] == anchor.shape[0], "Shapes do not match!"
-            #     knnanchor = anchor[hmask]
-            #     #knnanchor = knnanchor[torch.arange(anchor.shape[0]).unsqueeze(1), knn_indices]
-            #     knnanchor = knnanchor[knn_indices].contiguous().view(-1,3)
-                
-
-            #     #knnanchor = knnanchor[vismask]
-            #     knn_features =feat[vismask][knn_indices].contiguous().view(-1,pc.feat_dim)
-            #     knn_binary_grid_masks = binary_grid_masks[vismask][knn_indices].contiguous().view(-1, pc.n_offsets,1)
-            #     knn_grid_offsets=grid_offsets[vismask][knn_indices].contiguous().view(-1, pc.n_offsets,3)
-            #     knn_grid_scaling = grid_scaling[vismask][knn_indices].contiguous().view(-1, grid_scaling.shape[-1])
-            #     # anchor_knn = pc.get_anchor[pc.knn_indices].contiguous().view(-1,3)
-            #     # visible_mask_repeat = visible_mask.repeat(K)
-            #     # knnanchor = anchor_knn[visible_mask_repeat]
-
-            #     # knn_features = pc._anchor_feat[pc.knn_indices].view(-1,pc.feat_dim)[visible_mask_repeat]
-            #     # knn_grid_offsets = pc._offset[pc.knn_indices].view(-1, pc.n_offsets,3)[visible_mask_repeat]
-            #     # knn_grid_scaling = pc.get_scaling[pc.knn_indices].view(-1, grid_scaling.shape[-1])[visible_mask_repeat]
-            #     # knn_binary_grid_masks = pc.get_mask[pc.knn_indices].view(-1, pc.n_offsets,1)[visible_mask_repeat]
-                
-            #     feat_context = pc.triplane(knnanchor,pc.x_bound_max,pc.x_bound_min)
-            #     feat_context = pc.get_tri_mlp(feat_context)
-            #     mean, scale, mean_scaling, scale_scaling, mean_offsets, scale_offsets, Q_feat_adj, Q_scaling_adj, Q_offsets_adj = \
-            #         torch.split(feat_context, split_size_or_sections=[pc.feat_dim, pc.feat_dim, 6, 6, 3*pc.n_offsets, 3*pc.n_offsets, 1, 1, 1], dim=-1)
-                
-            #     Q_feat_t  = Q_feat * (1 + torch.tanh(Q_feat_adj))
-            #     Q_scaling_t = Q_scaling * (1 + torch.tanh(Q_scaling_adj))
-            #     Q_offsets_t = Q_offsets * (1 + torch.tanh(Q_offsets_adj))
-
-            #     Q_feat_adj = Q_feat_adj[:len(anchor), :]
-            #     Q_scaling_adj = Q_scaling_adj[:len(anchor), :]
-            #     Q_offsets_adj=  Q_offsets_adj[:len(anchor), :]
-
-
-            #     Q_feat = Q_feat * (1 + torch.tanh(Q_feat_adj))
-            #     Q_scaling = Q_scaling * (1 + torch.tanh(Q_scaling_adj))
-            #     Q_offsets = Q_offsets * (1 + torch.tanh(Q_offsets_adj))
-            #     feat = feat + torch.empty_like(feat).uniform_(-0.5, 0.5) * Q_feat
-            #     grid_scaling = grid_scaling + torch.empty_like(grid_scaling).uniform_(-0.5, 0.5) * Q_scaling
-            #     grid_offsets = grid_offsets + torch.empty_like(grid_offsets).uniform_(-0.5, 0.5) * Q_offsets.unsqueeze(1)
-
-            #     choose_idx = torch.rand_like(knnanchor[:, 0]) <= 0.05
-
-            #     mask_anchor_bool = pc.get_mask_anchor[knn_indices].flatten()[vismask]
-            #     choose_idx = choose_idx & mask_anchor_bool
-            #     feat_chosen = knn_features[choose_idx]
-            #     grid_scaling_chosen = knn_grid_scaling[choose_idx]
-            #     grid_offsets_chosen = knn_grid_offsets[choose_idx].view(-1, 3*pc.n_offsets)
-            #     mean = mean[choose_idx]
-            #     scale = scale[choose_idx]
-            #     mean_scaling = mean_scaling[choose_idx]
-            #     scale_scaling = scale_scaling[choose_idx]
-            #     mean_offsets = mean_offsets[choose_idx]
-            #     scale_offsets = scale_offsets[choose_idx]
-            #     Q_feat = Q_feat_t[choose_idx]
-            #     Q_scaling = Q_scaling_t[choose_idx]
-            #     Q_offsets = Q_offsets_t[choose_idx]
-
-            #     binary_grid_masks_chosen = knn_binary_grid_masks[choose_idx].repeat(1,1, 3).view(-1, 3*pc.n_offsets)
-
-            #     # knnanchor = anchor[knn_indices]
-            #     # knn_features =feat[knn_indices]
-            #     # knn_binary_grid_masks = binary_grid_masks[knn_indices]
-            #     # knn_grid_offsets=grid_offsets[knn_indices]
-            #     # knn_grid_scaling = grid_scaling[knn_indices]
-            #     # choose_idx = torch.rand_like(knn_indices[:, 0]) <= 0.01
-            #     # choose_idx = choose_idx & mask_anchor_bool
-            #     # knn_indices = knn_indices[choose_idx]#chosenknn
-            #     # chosen_anchor = knnanchor[choose_idx].contiguous().view(-1,3)
-                
-
-            #     # feat_context = pc.triplane(chosen_anchor,pc.x_bound_max,pc.x_bound_min)
-            #     # feat_context = pc.get_tri_mlp(feat_context)
-            #     # mean, scale, mean_scaling, scale_scaling, mean_offsets, scale_offsets, Q_feat_adj, Q_scaling_adj, Q_offsets_adj = \
-            #     #     torch.split(feat_context, split_size_or_sections=[pc.feat_dim, pc.feat_dim, 6, 6, 3*pc.n_offsets, 3*pc.n_offsets, 1, 1, 1], dim=-1)
-                
-
-                
-
-            #     # feat_chosen = knn_features[choose_idx].view(-1,pc.feat_dim)
-            #     # grid_scaling_chosen = knn_grid_scaling[choose_idx]
-            #     # grid_offsets_chosen = knn_grid_offsets[choose_idx].view(-1, 3*pc.n_offsets)
-
-            #     # Q_feat = Q_feat * (1 + torch.tanh(Q_feat_adj))
-            #     # Q_scaling = Q_scaling * (1 + torch.tanh(Q_scaling_adj))
-            #     # Q_offsets = Q_offsets * (1 + torch.tanh(Q_offsets_adj))
-                
-
-            #     # binary_grid_masks_chosen = knn_binary_grid_masks[choose_idx].view(-1,pc.n_offsets,1).repeat(1,1, 3).view(-1, 3*pc.n_offsets)
-
-            
-
-            # else:
             if step > 15000:
                 #knn_indices = pc.knn_indices[visible_mask]
                 knnanchor = pc.knnanchor#anchor[knn_indices]#N,K,3
             else:
                 knnanchor = anchor.unsqueeze(1).repeat(1,K,1)
-            feat_context,compressed_triplane, reconstructed_triplane = pc.triplane(knnanchor,pc.x_bound_max,pc.x_bound_min,is_training,step=step)
-            if reconstructed_triplane is not None:
-                lae = l1_loss(pc.triplane.planes, reconstructed_triplane)
-            feat_context = torch.cat([feat_context,anchor],dim=1)
-            feat_context = pc.get_tri_mlp(feat_context)
-            mean, scale, mean_scaling, scale_scaling, mean_offsets, scale_offsets, Q_feat_adj, Q_scaling_adj, Q_offsets_adj = \
-            torch.split(feat_context, split_size_or_sections=[pc.feat_dim, pc.feat_dim, 6, 6, 3*pc.n_offsets, 3*pc.n_offsets, 1, 1, 1], dim=-1)
+        feat_context,compressed_triplane, reconstructed_triplane = pc.triplane(knnanchor,pc.x_bound_max,pc.x_bound_min,is_training,step=step)
+        if reconstructed_triplane is not None:
+            lae = l1_loss(pc.triplane.planes, reconstructed_triplane)
+        feat_context = torch.cat([feat_context,anchor],dim=1)
+        feat_context = pc.get_tri_mlp(feat_context)
+        mean, scale, mean_scaling, scale_scaling, mean_offsets, scale_offsets, Q_feat_adj, Q_scaling_adj, Q_offsets_adj = \
+        torch.split(feat_context, split_size_or_sections=[pc.feat_dim, pc.feat_dim, 6, 6, 3*pc.n_offsets, 3*pc.n_offsets, 1, 1, 1], dim=-1)
 
-            Q_feat = Q_feat * (1 + torch.tanh(Q_feat_adj))
-            Q_scaling = Q_scaling * (1 + torch.tanh(Q_scaling_adj))
-            Q_offsets = Q_offsets * (1 + torch.tanh(Q_offsets_adj))
-            feat = feat + torch.empty_like(feat).uniform_(-0.5, 0.5) * Q_feat
-            grid_scaling = grid_scaling + torch.empty_like(grid_scaling).uniform_(-0.5, 0.5) * Q_scaling
-            grid_offsets = grid_offsets + torch.empty_like(grid_offsets).uniform_(-0.5, 0.5) * Q_offsets.unsqueeze(1)
+        Q_feat = Q_feat * (1 + torch.tanh(Q_feat_adj))
+        Q_scaling = Q_scaling * (1 + torch.tanh(Q_scaling_adj))
+        Q_offsets = Q_offsets * (1 + torch.tanh(Q_offsets_adj))
+        feat = feat + torch.empty_like(feat).uniform_(-0.5, 0.5) * Q_feat
+        grid_scaling = grid_scaling + torch.empty_like(grid_scaling).uniform_(-0.5, 0.5) * Q_scaling
+        grid_offsets = grid_offsets + torch.empty_like(grid_offsets).uniform_(-0.5, 0.5) * Q_offsets.unsqueeze(1)
 
-            choose_idx = torch.rand_like(anchor[:, 0]) <= 0.15
-            choose_idx = choose_idx & mask_anchor_bool
-            feat_chosen = feat[choose_idx]
-            grid_scaling_chosen = grid_scaling[choose_idx]
-            grid_offsets_chosen = grid_offsets[choose_idx].view(-1, 3*pc.n_offsets)
-            mean = mean[choose_idx]
-            scale = scale[choose_idx]
-            mean_scaling = mean_scaling[choose_idx]
-            scale_scaling = scale_scaling[choose_idx]
-            mean_offsets = mean_offsets[choose_idx]
-            scale_offsets = scale_offsets[choose_idx]
-            Q_feat = Q_feat[choose_idx]
-            Q_scaling = Q_scaling[choose_idx]
-            Q_offsets = Q_offsets[choose_idx]
+        choose_idx = torch.rand_like(anchor[:, 0]) <= 0.15
+        choose_idx = choose_idx & mask_anchor_bool
+        feat_chosen = feat[choose_idx]
+        grid_scaling_chosen = grid_scaling[choose_idx]
+        grid_offsets_chosen = grid_offsets[choose_idx].view(-1, 3*pc.n_offsets)
+        mean = mean[choose_idx]
+        scale = scale[choose_idx]
+        mean_scaling = mean_scaling[choose_idx]
+        scale_scaling = scale_scaling[choose_idx]
+        mean_offsets = mean_offsets[choose_idx]
+        scale_offsets = scale_offsets[choose_idx]
+        Q_feat = Q_feat[choose_idx]
+        Q_scaling = Q_scaling[choose_idx]
+        Q_offsets = Q_offsets[choose_idx]
 
-            binary_grid_masks_chosen = binary_grid_masks[choose_idx].repeat(1,1, 3).view(-1, 3*pc.n_offsets)
-            
-            bit_feat = pc.entropy_gaussian.forward(feat_chosen, mean, scale, Q_feat, pc._anchor_feat.mean())
-            bit_scaling = pc.entropy_gaussian.forward(grid_scaling_chosen, mean_scaling, scale_scaling, Q_scaling, pc.get_scaling.mean())
-            bit_offsets = pc.entropy_gaussian.forward(grid_offsets_chosen, mean_offsets, scale_offsets, Q_offsets, pc._offset.mean())
-            bit_offsets = bit_offsets * binary_grid_masks_chosen
-            bit_per_feat_param = torch.sum(bit_feat) / bit_feat.numel() * mask_anchor_rate
-            bit_per_scaling_param = torch.sum(bit_scaling) / bit_scaling.numel() * mask_anchor_rate
-            bit_per_offsets_param = torch.sum(bit_offsets) / bit_offsets.numel() * mask_anchor_rate
-            bit_per_param = (torch.sum(bit_feat) + torch.sum(bit_scaling) + torch.sum(bit_offsets)) / \
-                            (bit_feat.numel() + bit_scaling.numel() + bit_offsets.numel()) * mask_anchor_rate
+        binary_grid_masks_chosen = binary_grid_masks[choose_idx].repeat(1,1, 3).view(-1, 3*pc.n_offsets)
+        
+        bit_feat = pc.entropy_gaussian.forward(feat_chosen, mean, scale, Q_feat, pc._anchor_feat.mean())
+        bit_scaling = pc.entropy_gaussian.forward(grid_scaling_chosen, mean_scaling, scale_scaling, Q_scaling, pc.get_scaling.mean())
+        bit_offsets = pc.entropy_gaussian.forward(grid_offsets_chosen, mean_offsets, scale_offsets, Q_offsets, pc._offset.mean())
+        bit_offsets = bit_offsets * binary_grid_masks_chosen
+        bit_per_feat_param = torch.sum(bit_feat) / bit_feat.numel() * mask_anchor_rate
+        bit_per_scaling_param = torch.sum(bit_scaling) / bit_scaling.numel() * mask_anchor_rate
+        bit_per_offsets_param = torch.sum(bit_offsets) / bit_offsets.numel() * mask_anchor_rate
+        bit_per_param = (torch.sum(bit_feat) + torch.sum(bit_scaling) + torch.sum(bit_offsets)) / \
+                        (bit_feat.numel() + bit_scaling.numel() + bit_offsets.numel()) * mask_anchor_rate
 
     elif not pc.decoded_version:
         torch.cuda.synchronize(); t1 = time.time()
