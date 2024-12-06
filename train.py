@@ -15,7 +15,7 @@ import numpy as np
 import subprocess
 cmd = 'nvidia-smi -q -d Memory |grep -A4 GPU|grep Used'
 # result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE).stdout.decode().split('\n')
-os.environ['CUDA_VISIBLE_DEVICES']=str(3)
+os.environ['CUDA_VISIBLE_DEVICES']=str(0)
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 os.system('echo $CUDA_VISIBLE_DEVICES')
@@ -52,6 +52,7 @@ from utils.encodings import anchor_round_digits, Q_anchor, encoder_anchor, get_b
 # lpips_fn = lpips.LPIPS(net='vgg').to('cuda')
 
 from lpipsPyTorch import lpips
+torch.hub.set_dir('/hy-tmp/cache')
 
 bit2MB_scale = 8 * 1024 * 1024
 run_codec = True
@@ -190,7 +191,7 @@ def training(dataset, opt, pipe, dataset_name, testing_iterations, saving_iterat
         Ll1 = l1_loss(image, gt_image)
         ssim_loss = (1.0 - ssim(image, gt_image))   
         scaling_reg = scaling.prod(dim=1).mean()
-        loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * ssim_loss + 0.01*scaling_reg  #+ 0.02 *wavelet_loss(image, gt_image)
+        loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * ssim_loss + 0.01*scaling_reg  + 0.02 *wavelet_loss(image, gt_image)
 
         if bit_per_param is not None:
             #_, bit_hash_grid, MB_hash_grid, _ = get_binary_vxl_size((gaussians.get_encoding_params()+1)/2)
