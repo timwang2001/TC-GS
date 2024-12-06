@@ -19,5 +19,11 @@ dependencies:
     - wandb
     - lpips
     - laspy
+    - torchac
+    - scikit-learn
+    - einops
+    - PyWavelets
     - submodules/diff-gaussian-rasterization
     - submodules/simple-knn
+    - submodules/nvdiffrast
+    - submodules/pytorch_wavelets

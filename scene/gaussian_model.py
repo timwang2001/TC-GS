@@ -107,7 +107,6 @@ class GaussianModel(nn.Module):
         self._offset = torch.empty(0)
         self._anchor_feat = torch.empty(0)
         self._mask = torch.empty(0)
-
         self.appearance_dim = appearance_dim
         self.ratio = ratio
         self.add_opacity_dist = add_opacity_dist
@@ -545,11 +544,6 @@ class GaussianModel(nn.Module):
         l = ['x', 'y', 'z', 'nx', 'ny', 'nz']
         for i in range(self._offset.shape[1]*self._offset.shape[2]):
             l.append('f_offset_{}'.format(i))
-        # for i in range(self._anchor_feat.shape[1]):
-        #     l.append('f_anchor_feat_{}'.format(i))
-        # for j in range(3):
-        #     for i in range(self.triplane.shape[2]*self.triplane.shape[3]):
-        #         l.append('triplane{}_{}'.format(j,i))
         for i in range(self._mask.shape[1]*self._mask.shape[2]):
             l.append('f_mask_{}'.format(i))
         for i in range(self._anchor_feat.shape[1]):
