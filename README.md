@@ -1,4 +1,4 @@
-# TC-GS: Tri-plane based Compression for 3D Gaussian Splatting
+# TC-GS: Tri-plane based Compression for 3D Gaussian Splatting[ICME'25]
 Taorui Wang, Zitong Yu, Yong Xu
 
 ## Installation
