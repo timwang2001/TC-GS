@@ -9,7 +9,7 @@ feat_dim=50
 
 ulimit -n 4096
 
-# ./train.sh -d tandt/truck -l ${exp_name} --gpu -1 --voxel_size ${voxel_size} --update_init_factor ${update_init_factor} --appearance_dim ${appearance_dim} --ratio ${ratio} --tri_resolution ${tri_resolution} --feat_dim ${feat_dim} & 
+./train.sh -d tandt/truck -l ${exp_name} --gpu -1 --voxel_size ${voxel_size} --update_init_factor ${update_init_factor} --appearance_dim ${appearance_dim} --ratio ${ratio} --tri_resolution ${tri_resolution} --feat_dim ${feat_dim} & 
 # sleep 20s
-# wait
+wait
 ./train.sh -d tandt/train -l ${exp_name} --gpu -1 --voxel_size ${voxel_size} --update_init_factor ${update_init_factor} --appearance_dim ${appearance_dim} --ratio ${ratio} --tri_resolution ${tri_resolution} --feat_dim ${feat_dim} & 
