@@ -4,6 +4,8 @@ voxel_size=0
 update_init_factor=128
 appearance_dim=0
 ratio=1
+tri_resolution=16
+feat_dim=50
 
 ulimit -n 4096
 

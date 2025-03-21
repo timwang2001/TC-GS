@@ -130,12 +130,9 @@ class GaussianModel(nn.Module):
         self.spatial_lr_scale = 0
         self.setup_functions()
         self.resolution = triplane_resolution
-        # self.triplane_scaling = Triplane(feature_dim=6,resolution=triplane_resolution)
         self.entropy_gaussian = Entropy_gaussian(Q=1).cuda()
-        #self.embed_fn, self.embed_fn_outdim = get_embedder(self.multires)#10
 
 
-        # self.triplane = TriMipEncoding(n_levels=3,plane_size=triplane_resolution,feature_dim=feat_dim,include_xyz=True)
 
         if self.use_feat_bank:
             self.mlp_feature_bank = nn.Sequential(
@@ -177,9 +174,6 @@ class GaussianModel(nn.Module):
 
     def get_encoding_params(self):
         params = []
-        #params= list(self.triplane.parameters())
-
-        #params = self.triplane.planes
         params = self.triplane.get_encode()
 
         return params
@@ -689,32 +683,17 @@ class GaussianModel(nn.Module):
         
         anchor_visible_mask = anchor_visible_mask.unsqueeze(dim=1).repeat([1, self.n_offsets]).view(-1)
 
-        # print(f"shape visible{anchor_visible_mask.shape}\n mask{self.get_mask.view(-1).shape}")
-        # print(f'anchor_visible_mask_shape{anchor_visible_mask.shape}')
-
-        # mask = self.get_mask.view(-1)
-        # mask_bool = mask.to(torch.bool)
-        # print(f'mask_bool{mask_bool.shape}')
-
-        # anchor_visible_mask = anchor_visible_mask &  mask_bool
-        # offset_selection_mask= offset_selection_mask&  mask_bool
-        # print(f'anchor_visible_mask_shape{anchor_visible_mask.shape}')
 
         combined_mask = torch.zeros_like(self.offset_gradient_accum, dtype=torch.bool).squeeze(dim=1)
-        # print(f'combined_mask shape{combined_mask.shape}')
-        # print(f)
+
 
         combined_mask[anchor_visible_mask] = offset_selection_mask
         temp_mask = combined_mask.clone()
         combined_mask[temp_mask] = update_filter
-        # pixels_max = pixels.max(dim=0).values
-        # pixels_min = pixels.min(dim=0).values
-        # pixels = (pixels-pixels_min)/(pixels_max-pixels_min) + 0.3 # 
 
         grad_norm = torch.norm(viewspace_point_tensor.grad[update_filter,:2], dim=-1, keepdim=True) #* pixels[update_filter]
         self.offset_gradient_accum[combined_mask] += grad_norm
         self.offset_denom[combined_mask] += 1#pixels[update_filter]#1
-        # print(f'offset_denom{pixels[update_filter]}')
 
         
 
@@ -880,12 +859,7 @@ class GaussianModel(nn.Module):
         grads[grads.isnan()] = 0.0
         grads_norm = torch.norm(grads, dim=-1)
         offset_mask = (self.offset_denom > check_interval*success_threshold*0.5).squeeze(dim=1)
-        # print(f'offset_maskshape{offset_mask.shape}')
-        # print(f' self.percent_dense*scene_extent{ self.percent_dense*scene_extent}')
-
-        # offset_mask = torch.logical_and(offset_mask,
-        #                                 torch.max(self.get_scaling.unsqueeze(dim=1).repeat([1, self.n_offsets, 1]).view(-1,6), dim=1).values <= self.percent_dense*scene_extent)
-        
+   
         self.anchor_growing(grads_norm, grad_threshold, offset_mask)
         
         # update offset_denom
@@ -906,10 +880,7 @@ class GaussianModel(nn.Module):
         anchors_mask = (self.anchor_demon > check_interval*success_threshold).squeeze(dim=1) # [N, 1]
 
         prune_mask = torch.logical_and(prune_mask, anchors_mask) # [N] 
-        # prune_mask = torch.logical_and(prune_mask,
-        #                                       torch.max(self.get_scaling, dim=1).values > self.percent_dense*scene_extent)
-        
-        # update offset_denom
+
         offset_denom = self.offset_denom.view([-1, self.n_offsets])[~prune_mask]
         offset_denom = offset_denom.view([-1, 1])
         del self.offset_denom
@@ -942,7 +913,6 @@ class GaussianModel(nn.Module):
         torch.save(self.triplane.compressed_plane,os.path.join(path,'triplane_state_dict.pth'))
         torch.save(self.triplane.autoencoder.decoder,os.path.join(path,'triplane_decoder_dict.pth'))
 
-        # torch.save(self.triplane_scaling.state_dict(),os.path.join(path,'triplane_scaling_state_dict.pth'))
 
 
     def save_mlp_checkpoints(self, path, mode = 'split'):#split or unite
@@ -1007,14 +977,10 @@ class GaussianModel(nn.Module):
             raise NotImplementedError
     def load_triplane_checkpoints(self,path):
         triplane = Triplane(self.feat_dim,self.resolution,self.spatial_lr_scale).cuda()
-        # triplane_scaling = Triplane(6,self.resolution)
         triplane.compressed_plane = torch.load(os.path.join(path, 'triplane_state_dict.pth'))
         triplane.autoencoder.decoder = torch.load(os.path.join(path, 'triplane_decoder_dict.pth'))
-        #triplane.load_state_dict(torch.load(os.path.join(path, 'triplane_state_dict.pth')),strict=False)
-        # triplane_scaling.load_state_dict(torch.load(os.path.join(path, 'triplane_scaling_state_dict.pth')))
 
         self.triplane = triplane
-        # self.triplane_scaling = triplane_scaling
 
     def load_mlp_checkpoints(self, path, mode = 'split'):#split or unite
         if mode == 'split':
@@ -1064,8 +1030,6 @@ class GaussianModel(nn.Module):
             x = x / 4 + 0.5  # [-inf, inf] is at [0, 1]
             return x
     def updatebbox(self):
-        #  = 
-        #  = self._anchor.detach().max(dim=0).values
         x_bound_min = (torch.min(self._anchor, dim=0, keepdim=True)[0]).detach()
         x_bound_max = (torch.max(self._anchor, dim=0, keepdim=True)[0]).detach()
         for c in range(x_bound_min.shape[-1]):
@@ -1223,7 +1187,6 @@ class GaussianModel(nn.Module):
             feat_context = self.triplane(anchor_sort,self.x_bound_max,self.x_bound_min)
             feat_context = torch.cat([feat_context,_anchor[N_start:N_end][indices]],dim=1)
 
-            #feat_context = self.calc_interp_feat(anchor_sort)  # [N_num, ?]
             # many [N_num, ?]
             mean, scale, mean_scaling, scale_scaling, mean_offsets, scale_offsets, Q_feat_adj, Q_scaling_adj, Q_offsets_adj = \
                 torch.split(self.get_tri_mlp(feat_context), split_size_or_sections=[self.feat_dim, self.feat_dim, 6, 6, 3 * self.n_offsets, 3 * self.n_offsets, 1, 1, 1], dim=-1)
@@ -1447,15 +1410,7 @@ class GaussianModel(nn.Module):
         self._mask = nn.Parameter(_mask)
 
         if self.ste_binary:
-        #     # if self.use_2D:
-        #     #     len_3D = self.encoding_xyz.encoding_xyz.params.shape[0]
-        #     #     len_2D = self.encoding_xyz.encoding_xy.params.shape[0]
-        #     #     # print(len_3D, len_2D, hash_embeddings.shape)
-        #     #     self.encoding_xyz.encoding_xyz.params = nn.Parameter(hash_embeddings[0:len_3D])
-        #     #     self.encoding_xyz.encoding_xy.params = nn.Parameter(hash_embeddings[len_3D:len_3D+len_2D])
-        #     #     self.encoding_xyz.encoding_xz.params = nn.Parameter(hash_embeddings[len_3D+len_2D:len_3D+len_2D*2])
-        #     #     self.encoding_xyz.encoding_yz.params = nn.Parameter(hash_embeddings[len_3D+len_2D*2:len_3D+len_2D*3])
-        #     # else:
+
             self.triplane.planes = nn.Parameter(hash_embeddings)
 
         print('Parameters are successfully replaced by decoded ones!')

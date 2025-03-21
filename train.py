@@ -15,8 +15,6 @@ import numpy as np
 import subprocess
 cmd = 'nvidia-smi -q -d Memory |grep -A4 GPU|grep Used'
 # result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE).stdout.decode().split('\n')
-os.environ['CUDA_VISIBLE_DEVICES']=str(0)
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 os.system('echo $CUDA_VISIBLE_DEVICES')
 
@@ -48,8 +46,7 @@ from arguments import ModelParams, PipelineParams, OptimizationParams#SplattingS
 
 from utils.encodings import anchor_round_digits, Q_anchor, encoder_anchor, get_binary_vxl_size
 
-# torch.set_num_threads(32)
-# lpips_fn = lpips.LPIPS(net='vgg').to('cuda')
+
 
 from lpipsPyTorch import lpips
 torch.hub.set_dir('/hy-tmp/cache')
@@ -147,20 +144,12 @@ def training(dataset, opt, pipe, dataset_name, testing_iterations, saving_iterat
         # Render
         if (iteration - 1) == debug_from:
             pipe.debug = True
-        # depth_threshold = 0.37 * scene.cameras_extent
-        #voxel_visible_mask = prefilter_voxel(viewpoint_cam, gaussians, pipe, background,splat_args=splat_args)
         voxel_visible_mask=None
         retain_grad = (iteration < opt.update_until and iteration >= 0)
         render_pkg = render(viewpoint_cam, gaussians, pipe, background, visible_mask=voxel_visible_mask, retain_grad=retain_grad,step=iteration,splat_args=splat_args)
         
         image, viewspace_point_tensor, visibility_filter, offset_selection_mask, radii, scaling, opacity = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["selection_mask"], render_pkg["radii"], render_pkg["scaling"], render_pkg["neural_opacity"]
-        # image: [3, H, W]. inited as: torch::full({NUM_CHANNELS, H, W}, 0.0, float_opts);
-        # viewspace_point_tensor=screenspace_points: [N_opacity_pos_gaussian, 3]
-        # visibility_filter: radii > 0. 其中 radii inited as: torch::full({P}, 0, means3D.options().dtype(torch::kInt32)); 其中P=N_opacity_pos_gaussian
-        # offset_selection_mask: [N_visible_anchor*k]。 用来表示visible anchor中哪几个gaussian是有效的，根据opacity>0.0得到
-        # radii: [N_opacity_pos_gaussian]. inited as: torch::full({P}, 0, means3D.options().dtype(torch::kInt32)); 其中P=N_opacity_pos_gaussian
-        # scaling: [N_opacity_pos_gaussian, 3]
-        # opacity: [N_visible_anchor*K, 1]
+
 
         bit_per_param = render_pkg["bit_per_param"]
         bit_per_feat_param = render_pkg["bit_per_feat_param"]
@@ -194,7 +183,6 @@ def training(dataset, opt, pipe, dataset_name, testing_iterations, saving_iterat
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * ssim_loss + 0.01*scaling_reg  + 0.02 *wavelet_loss(image, gt_image)
 
         if bit_per_param is not None:
-            #_, bit_hash_grid, MB_hash_grid, _ = get_binary_vxl_size((gaussians.get_encoding_params()+1)/2)
             bit_hash_grid = gaussians.get_encoding_params().numel()
             denom = gaussians._anchor.shape[0]*(gaussians.feat_dim+6+3*gaussians.n_offsets)
             lmbda = 0.001
@@ -204,7 +192,6 @@ def training(dataset, opt, pipe, dataset_name, testing_iterations, saving_iterat
 
             loss = loss + 5e-4 * torch.mean(torch.sigmoid(gaussians._mask))
         loss.backward()
-        # print('loss',loss.item())
 
         iter_end.record()
 
@@ -236,9 +223,9 @@ def training(dataset, opt, pipe, dataset_name, testing_iterations, saving_iterat
                 # add statis
                 # viewspace_point_tensor=screenspace_points: [N_opacity_pos_gaussian, 3]
                 # opacity: [N_visible_anchor*K, 1]
-                # visibility_filter: radii > 0. 其中 radii inited as: torch::full({P}, 0, means3D.options().dtype(torch::kInt32)); 其中P=N_opacity_pos_gaussian
-                # offset_selection_mask: [N_visible_anchor*k]。 用来表示visible anchor中哪几个gaussian是有效的，根据opacity>0.0得到
-                # voxel_visible_mask:bool = radii_pure > 0: 应该是[N_anchor]? voxel_visible_mask.sum()=N_visible_anchor
+                # visibility_filter: radii > 0. 
+                # offset_selection_mask: [N_visible_anchor*k]。 
+                # voxel_visible_mask:bool = radii_pure > 0
                 gaussians.training_statis(viewspace_point_tensor, opacity, visibility_filter, offset_selection_mask, voxel_visible_mask)
                 if iteration not in range(3000, 4000):  # let the model get fit to quantization
                     # densification
@@ -337,7 +324,6 @@ def training_report(tb_writer, dataset_name, iteration, Ll1, loss, l1_loss, elap
                         torch.cuda.synchronize(); t_start = time.time()
                         voxel_visible_mask = None#prefilter_voxel(viewpoint, scene.gaussians, *renderArgs,splat_args=splat_args)
 
-                        # image = torch.clamp(renderFunc(viewpoint, scene.gaussians, *renderArgs, visible_mask=voxel_visible_mask)["render"], 0.0, 1.0)
                         render_output = renderFunc(viewpoint, scene.gaussians, *renderArgs,splat_args=splat_args, visible_mask=voxel_visible_mask)
                         image = torch.clamp(render_output["render"], 0.0, 1.0)
                         time_sub = render_output["time_sub"]
@@ -360,7 +346,6 @@ def training_report(tb_writer, dataset_name, iteration, Ll1, loss, l1_loss, elap
                         l1_test += l1_loss(image, gt_image).mean().double()
                         psnr_test += psnr(image, gt_image).mean().double()
                         ssim_test += ssim(image, gt_image).mean().double()
-                        # lpips_test += lpips_fn(image, gt_image, normalize=True).detach().mean().double()
                         lpips_test += lpips(image, gt_image, net_type='vgg').detach().mean().double()
 
                     psnr_test /= len(config['cameras'])
@@ -408,7 +393,6 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
         torch.cuda.synchronize();t_start = time.time()
         
         voxel_visible_mask = None#prefilter_voxel(view, gaussians, pipeline, background,splat_args=splat_args)
-        #voxel_visible_mask=None
         render_pkg = render(view, gaussians, pipeline, background, visible_mask=voxel_visible_mask,splat_args=splat_args)
         torch.cuda.synchronize();t_end = time.time()
 

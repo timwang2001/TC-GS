@@ -45,13 +45,8 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
     
  
     if is_training:
-        # level = torch.tensor(0.5,device='cuda')
-        # feat = pc._anchor_feat[visible_mask]
-        # tri_feat = pc.triplane(anchor,level)
 
         if step> 3000 and step <= 10000:
-            # pc.updatebbox()
-            # quantization
             feat = feat + torch.empty_like(feat).uniform_( -0.5, 0.5) * Q_feat
             grid_scaling = grid_scaling + torch.empty_like(grid_scaling).uniform_(-0.5, 0.5) * Q_scaling
             grid_offsets = grid_offsets + torch.empty_like(grid_offsets).uniform_(-0.5, 0.5) * Q_offsets
@@ -61,7 +56,6 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
             pc.init_knn_indice(K)
         if step > 10000:
             if step > 15000:
-                #knn_indices = pc.knn_indices[visible_mask]
                 knnanchor = pc.knnanchor#anchor[knn_indices]#N,K,3
             else:
                 knnanchor = anchor.unsqueeze(1).repeat(1,K,1)
@@ -153,35 +147,21 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
     cat_local_view_wodist = torch.cat([feat, ob_view], dim=1) # [N, c+3]
     if pc.appearance_dim > 0:
         camera_indicies = torch.ones_like(cat_local_view[:,0], dtype=torch.long, device=ob_dist.device) * viewpoint_camera.uid
-        # camera_indicies = torch.ones_like(cat_local_view[:,0], dtype=torch.long, device=ob_dist.device) * 10
         appearance = pc.get_appearance(camera_indicies)
 
-    # get offset's opacity
-    # if pc.add_opacity_dist:
     neural_opacity = pc.get_opacity_mlp(cat_local_view) # [N, k]
-    # else:
-    #     neural_opacity = pc.get_opacity_mlp(cat_local_view_wodist)
-
-    # opacity mask generation  
 
 
     neural_opacity = neural_opacity.reshape([-1, 1])#n*k,1
-    # if is_training:
     neural_opacity = neural_opacity * binary_grid_masks.view(-1, 1)
 
     mask = (neural_opacity>0.0)
-    
-    # if anchor_mask is not None and is_training:
-    #     mask = torch.logical_and(mask,anchor_mask)
-    # select opacity 
+
     mask = mask.view(-1)
     opacity = neural_opacity[mask]
     binary_grid_masks = binary_grid_masks.view(-1, 1)[mask]
 
-    # if is_training:
-    # opacity = opacity
 
-    # get offset's color
     if pc.appearance_dim > 0:
         if pc.add_color_dist:
             color = pc.get_color_mlp(torch.cat([cat_local_view, appearance], dim=1))
