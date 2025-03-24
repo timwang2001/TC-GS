@@ -94,3 +94,7 @@ Meanwhile, we keep the manual rendering function with a similar usage of the cou
 python render.py -m <path to trained model> # Generate renderings
 python metrics.py -m <path to trained model> # Compute error metrics on renderings
 ```
+
+## Acknowledgement
+
+We thank all authors from [3D-GS](https://github.com/graphdeco-inria/gaussian-splatting) and [Scaffold-GS](https://github.com/city-super/Scaffold-GS)for presenting such an excellent work.
