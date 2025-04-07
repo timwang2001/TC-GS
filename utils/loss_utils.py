@@ -68,7 +68,7 @@ def wavelet_loss(img1,img2,step=0):
     ifm = DWTInverse(mode='zero', wave='haar')
     Yl1, Yh1 = xfm(img1.unsqueeze(0))
     Yl2, Yh2 = xfm(img2.unsqueeze(0))
-    Ll = l1_loss(Yl1.squeeze(),Yl1.squeeze())
+    Ll = l1_loss(Yl1.squeeze(),Yl2.squeeze())
     Yh11 = Yh1[0].permute(2,0,1,3,4).squeeze()#3,c,h,w
     Yh21 = Yh2[0].permute(2,0,1,3,4).squeeze()
     Yh12 = Yh1[1].permute(2,0,1,3,4).squeeze()
